@@ -6,13 +6,15 @@
             "type": "string",
             "metadata": {
                 "description": "Logical environment code"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "locationCode": {
             "type": "string",
             "metadata": {
                 "description": "Logical location code"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "dotNetApplicationLocation": {
             "type": "string",
@@ -26,7 +28,7 @@
             "metadata": {
                 "description": "Unique identifier for this deployment"
             },
-            "defaultValue": ""
+            "defaultValue": "CI-test"
         },
         "appServicePlanName": {
             "type": "string",
@@ -51,7 +53,8 @@
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingClientStorageAccountTrentApi": {
             "type": "string",
@@ -71,25 +74,29 @@
             "type": "string",
             "metadata": {
                 "description": "Staging control DB Connectionstring"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingSendGridKey": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingCoreAThumbprint": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingEnvironmentKeyResolverThumbprint": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingTimeZone": {
             "type": "string",
@@ -102,13 +109,15 @@
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingTrustedSubsystemBaseAuthenticationUri": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingGoogleMapsUrl": {
             "type": "string",
@@ -121,49 +130,57 @@
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingGoogleMapsCryptoKey": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringBoundedContextSynchronisation": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringBoundedContextSynchronisation": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for bc-sync topic"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringCommandNotificationManagement": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringCommandNotificationManagement": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for nm command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringCommandHrmDataImportManagement": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringCommandHrmDataImportManagement": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for hrm-dim command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingDeploymentLogIdentity": {
             "type": "string",
@@ -176,135 +193,155 @@
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringBoundedContextSynchronisationHighPriority": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for bc-sync high priority topic"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringCommandHumanResourceManagement": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringCommandHumanResourceManagement": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for hrm command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringCommandIdentityAccessManagement": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringCommandIdentityAccessManagement": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for iam command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnStringCommandCalendar": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnStringCommandCalendar": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for calendar command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnStringCommandSocialFeed": {
           "type": "string",
           "metadata": {
               "description": "Connection string string for social feed command queue"
-          }
+          },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnStringCommandSocialFeed": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for social feed command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnStringCommandAdmin": {
           "type": "string",
           "metadata": {
               "description": "Connection string string for admin command queue"
-          }
+          },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnStringCommandAdmin": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for admin command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnStringCommandIamDataImport": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnStringCommandIamDataImport": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for iam-dim command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringCommandTimeAndAttendance": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringCommandTimeAndAttendance": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for t&a command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnectionStringPayrollIntegration": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnectionStringPayrollIntegration": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for PI command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnStringCommandDataCompliancePrivacy": {
             "type": "string",
             "metadata": {
                 "description": ""
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "stagingServiceBusConnStringCommandDataCompliancePrivacy": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for dcp command queue"
-            }
+            },
+          "defaultValue":"CI-test"
         },
         "appSettingServiceBusConnStringRealTimePayrollIntegration": {
             "type": "string",
             "metadata": {
                 "description": ""
             },
-            "defaultValue": ""
+            "defaultValue":"CI-test"
         },
         "stagingServiceBusConnStringRealTimePayrollIntegration": {
             "type": "string",
             "metadata": {
                 "description": "Staging ASB connection string for RTPI command queue"
             },
-            "defaultValue": ""
+            "defaultValue":"CI-test"
         },
         "healthcheckEmailList": {
             "type": "string",
