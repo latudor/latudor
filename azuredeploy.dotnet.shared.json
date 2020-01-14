@@ -6,13 +6,15 @@
       "type": "string",
       "metadata": {
         "description": "Logical environment code"
-      }
+      },
+      "defaultValue:"CI-test"
     },
     "locationCode": {
       "type": "string",
       "metadata": {
         "description": "Logical location code"
-      }
+      },
+      "defaultValue:"CI-test"
     },
     "appInsightsLocationCode": {
       "type": "string",
@@ -67,7 +69,8 @@
       "type": "string",
       "metadata": {
         "description": "Key to the oncall function."
-      }
+      },
+      "defaultValue:"CI-test"
     },
     "appInsightsSamplingRatePercentage": {
       "type": "int",
