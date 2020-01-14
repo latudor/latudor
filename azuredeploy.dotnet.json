@@ -35,7 +35,7 @@
             "metadata": {
                 "description": "The name of the DotNet API app service plan"
             },
-            "defaultValue": "detest"
+            "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('locationCode'), '-plan'), concat('pf-dotnet-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-plan'))]"
         },
         "skuName": {
             "type": "string",
