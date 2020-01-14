@@ -6,13 +6,15 @@
       "type": "string",
       "metadata": {
           "description": "Logical environment code"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "locationCode": {
         "type": "string",
         "metadata": {
             "description": "Logical location code"
-        }
+        },
+      "defaultValue":"CI-test"
     },
     "dequeuersLocation": {
       "type": "string",
@@ -26,7 +28,7 @@
         "metadata": {
             "description": "Unique identifier for this deployment"
         },
-        "defaultValue": ""
+      "defaultValue":"CI-test"
     },
     "appServicePlanName": {
       "type": "string",
@@ -95,43 +97,50 @@
       "type": "string",
       "metadata": {
         "description": "ID of the resource the token is for when requesting access token e.g. client ID of app registration used for service to service communication"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingMessageQServiceBusClientId": {
       "type": "string",
       "metadata": {
         "description": "Client ID of the Azure AD app registration used when requesting access tokens"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingMessageQServiceBusClientSecret": {
       "type": "string",
       "metadata": {
         "description": "App registration client secret. Used when requestion access tokens"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingMessageQTokenEndpoint": {
       "type": "string",
       "metadata": {
         "description": "Token endpoint e.g. https://login.microsoftonline.com/<yourazureadtenant>/oauth2/token"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingMessageQServiceBusEndpoint": {
       "type": "string",
       "metadata": {
         "description": "Azure service bus connectionstring"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingServiceBusConnenctionString": {
       "type": "string",
       "metadata": {
         "description": "Azure service bus connectionstring for staging slot"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCoreAThumbprint": {
       "type": "string",
       "metadata": {
         "description": "Core A Certificate Thumbprint"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "webappDequeuerCmdHrmName": {
       "type": "string",
@@ -235,55 +244,64 @@
       "type": "string",
       "metadata": {
         "description": "Connection string for Control DB"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingControlDbConnectionString": {
       "type": "string",
       "metadata": {
         "description": "Connection string for staging Control DB"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCommandHumanResourceManagement": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for HRM command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandHumanResourceManagement": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for staging HRM command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCommandNotificationManagement": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for NM command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandNotificationManagement": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for staging NM command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCommandIdentityAccessManagement": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for IAM command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandIdentityAccessManagement": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for staging IAM command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCommandTimeAndAttendance": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for TA command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandTimeAndAttendance": {
       "type": "string",
@@ -295,37 +313,43 @@
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for DCP command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandDataCompliancePrivacy": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for staging DCP command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCommandRealTimePayrollIntegration": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for RTPI command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandRealTimePayrollIntegration": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for staging RTPI command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingCommandPayrollIntegration": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for PI command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "stagingCommandPayrollIntegration": {
       "type": "string",
       "metadata": {
         "description": "Azure servicebus connection string for staging PI command queue"
-      }
+      },
+      "defaultValue":"CI-test"
     },
     "appSettingDeploymentLogIdentity": {
       "type": "string",
