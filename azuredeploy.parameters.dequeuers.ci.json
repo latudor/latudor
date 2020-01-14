@@ -1,0 +1,84 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "locationCode": {
+      "value": "ci-test"
+    },
+    "appSettingMessageQInboxBaseAddress": {
+      "value": "Ci base inbox address"
+    },
+    "stagingMessageInboxBaseAddress": {
+      "value": "Ci staging base inbox address"
+    },
+    "appSettingMessageQServiceBusResourceId": {
+      "value": "Ci resource id"
+    },
+    "appSettingMessageQServiceBusClientId": {
+      "value": "Ci client id"
+    },
+    "appSettingMessageQServiceBusClientSecret": {
+      "value": "Ci client secrect"
+    },
+    "appSettingMessageQTokenEndpoint": {
+      "value": "Ci token endpoint"
+    },
+    "appSettingMessageQServiceBusEndpoint": {
+      "value": "Ci azure servicebus connection string"
+    },
+    "stagingServiceBusConnenctionString": {
+      "value": "Ci staging azure servicebus connection string"
+    },
+    "appSettingCoreAThumbprint": {
+      "value": "Ci thumbprint"
+    },
+    "appSettingControlDbConnectionString": {
+      "value": "Ci control db connection string"
+    },
+    "stagingControlDbConnectionString": {
+      "value": "Ci staging control db connection string"
+    },
+    "appSettingCommandHumanResourceManagement": {
+      "value": "Ci command hrm asb connection string"
+    },
+    "stagingCommandHumanResourceManagement": {
+      "value": "Ci staging command hrm asb connection string"
+    },
+    "appSettingCommandNotificationManagement": {
+      "value": "Ci command nm asb connection string"
+    },
+    "stagingCommandNotificationManagement": {
+      "value": "Ci staging command nm asb connection string"
+    },
+    "appSettingCommandIdentityAccessManagement": {
+      "value": "Ci command iam asb connection string"
+    },
+    "stagingCommandIdentityAccessManagement": {
+      "value": "Ci staging command iam asb connection string"
+    },
+    "appSettingCommandPayrollIntegration": {
+      "value": "Ci command pi asb connection string"
+    },
+    "stagingCommandPayrollIntegration": {
+      "value": "Ci staging command pi asb connection string"
+    },
+    "appSettingCommandTimeAndAttendance": {
+      "value": "Ci command ta asb connection string"
+    },
+    "stagingCommandTimeAndAttendance": {
+      "value": "Ci staging command ta asb connection string"
+    },
+    "appSettingCommandDataCompliancePrivacy": {
+      "value": "Ci command dcp asb connection string"
+    },
+    "stagingCommandDataCompliancePrivacy": {
+      "value": "Ci staging command dcp asb connection string"
+    },
+    "appSettingCommandRealTimePayrollIntegration": {
+      "value": "Ci command rtpi asb connection string"
+    },
+    "stagingCommandRealTimePayrollIntegration": {
+      "value": "Ci staging command rtpi asb connection string"
+    }
+  }
+}

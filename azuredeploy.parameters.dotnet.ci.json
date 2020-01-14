@@ -1,0 +1,123 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentCode": {
+      "value": "ci-test"
+    },
+    "locationCode": {
+      "value": "ci-test"
+    },
+    "connStringClientStorageAccount": {
+      "value": "ci-test"
+    },
+    "stagingControlDbConnectionString": {
+      "value": "ci-test"
+    },
+    "appSettingSendGridKey": {
+      "value": "ci-test"
+    },
+    "appSettingCoreAThumbprint": {
+      "value": "ci-test"
+    },
+    "appSettingEnvironmentKeyResolverThumbprint": {
+      "value": "ci-test"
+    },
+    "appSettingTrustedSubsystemClientId": {
+      "value": "ci-test"
+    },
+    "appSettingTrustedSubsystemBaseAuthenticationUri": {
+      "value": "ci-test"
+    },
+    "appSettingGoogleMapsClientId": {
+      "value": "ci-test"
+    },
+    "appSettingGoogleMapsCryptoKey": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringBoundedContextSynchronisation": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringBoundedContextSynchronisation": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringCommandNotificationManagement": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringCommandNotificationManagement": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringCommandHrmDataImportManagement": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringCommandHrmDataImportManagement": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringBoundedContextSynchronisationHighPriority": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringBoundedContextSynchronisationHighPriority": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringCommandHumanResourceManagement": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringCommandHumanResourceManagement": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringCommandIdentityAccessManagement": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringCommandIdentityAccessManagement": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnStringCommandCalendar": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnStringCommandCalendar": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnStringCommandSocialFeed": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnStringCommandSocialFeed": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnStringCommandAdmin": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnStringCommandAdmin": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnStringCommandIamDataImport": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnStringCommandIamDataImport": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringCommandTimeAndAttendance": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringCommandTimeAndAttendance": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnectionStringPayrollIntegration": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnectionStringPayrollIntegration": {
+      "value": "ci-test"
+    },
+    "appSettingServiceBusConnStringCommandDataCompliancePrivacy": {
+      "value": "ci-test"
+    },
+    "stagingServiceBusConnStringCommandDataCompliancePrivacy": {
+      "value": "ci-test"
+    },
+    "stagingDefaultPath": {
+      "value": "ci-test"
+    },
+    "stagingJobBoardPath": {
+      "value": "ci-test"
+    }
+  }
+}

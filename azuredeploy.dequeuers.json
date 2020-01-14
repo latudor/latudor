@@ -1,0 +1,3216 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentCode": {
+      "type": "string",
+      "metadata": {
+          "description": "Logical environment code"
+      }
+    },
+    "locationCode": {
+        "type": "string",
+        "metadata": {
+            "description": "Logical location code"
+        }
+    },
+    "dequeuersLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "The azure region (location) of the dotnet dequeuers"
+      },
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "deploymentId": {
+        "type": "string",
+        "metadata": {
+            "description": "Unique identifier for this deployment"
+        },
+        "defaultValue": ""
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "metadata": {
+          "description": "The name of the app service plan"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('locationCode'), '-plan'), concat('pf-dotnet-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-plan'))]"
+    },
+    "appServicePlanResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group where the service plan is created."
+      },
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "webappDequeuerBCSyncIamName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the IAM BC Sync dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsynciamdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsynciamdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "storageAccountDequeuerLogsName": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      },
+      "defaultValue": "[concat('pfdqrswj', substring(uniqueString(resourceGroup().id), 0, 6), take(parameters('environmentCode'), 5), 'stor')]"
+    },
+    "appInsightsLocationCode": {
+      "type": "string",
+      "metadata": {
+        "description": "The location code used to identify what region application insights is deployed to, e.g. ukw, euw or asiae."
+      },
+      "defaultValue": "[parameters('locationCode')]"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "metadata": {
+          "description": "The name of the App Insights account"
+      },
+      "defaultValue": "[concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('appInsightsLocationCode'), '-ins')]"
+    },
+    "applicationInsightsResourceGroup": {
+        "type": "string",
+        "metadata": {
+            "description": "The name of the resource group the application insights account is created in."
+        },
+        "defaultValue": "[concat('pf-dotnet-shared-', parameters('environmentCode'), '-', parameters('locationCode'), '-rg')]"
+    },
+    "appSettingMessageQInboxBaseAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Base URI for handling messages e.g. <reverse proxy host>/api/v1/"
+      },
+      "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app.azurewebsites.net/api/v1/')]"
+    },
+    "stagingMessageInboxBaseAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Base URI for handling messages e.g. <staging reverse proxy host>/api/v1/"
+      },
+      "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app-staging.azurewebsites.net/api/v1/')]"
+    },
+    "appSettingMessageQServiceBusResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "ID of the resource the token is for when requesting access token e.g. client ID of app registration used for service to service communication"
+      }
+    },
+    "appSettingMessageQServiceBusClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Client ID of the Azure AD app registration used when requesting access tokens"
+      }
+    },
+    "appSettingMessageQServiceBusClientSecret": {
+      "type": "string",
+      "metadata": {
+        "description": "App registration client secret. Used when requestion access tokens"
+      }
+    },
+    "appSettingMessageQTokenEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Token endpoint e.g. https://login.microsoftonline.com/<yourazureadtenant>/oauth2/token"
+      }
+    },
+    "appSettingMessageQServiceBusEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure service bus connectionstring"
+      }
+    },
+    "stagingServiceBusConnenctionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure service bus connectionstring for staging slot"
+      }
+    },
+    "appSettingCoreAThumbprint": {
+      "type": "string",
+      "metadata": {
+        "description": "Core A Certificate Thumbprint"
+      }
+    },
+    "webappDequeuerCmdHrmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the HRM Command dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-cmdhrmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-cmdhrmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerCmdNmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the NM Command dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-cmdnmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-cmdnmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerCmdIamName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the IAM Command dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-cmdiamdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-cmdiamdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerCmdIamDimName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the IAMDIM Command dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-cmdiamdimdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-cmdiamdimdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerCmdHrmDimName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the HRMDIM Command dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-cmdhrmdimdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-cmdhrmdimdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcSyncHighPriorityHrm": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the HRM BC Sync high priority dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsynchphrmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsynchphrmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcSyncHighPriorityNm": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the NM BC Sync high priority dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsynchpnmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsynchpnmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcSyncHrm": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the HRM BC Sync dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsynchrmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsynchrmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcAdminHrm": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the HRM Admin dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcadminhrmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcadminhrmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcSyncNm": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the NM BC Sync dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsyncnmdq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsyncnmdq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappGlobalMessageSweeperName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the global sweeper webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-glbsweeper-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-glbsweeper-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcSyncHighPriorityPi": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the PI BC Sync high priority dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsynchppidq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsynchppidq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerBcSyncPi": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the PI BC Sync dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-bcsyncpidq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-bcsyncpidq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "webappDequeuerCmdPiName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of web app hosting the PI Command dequeuer webjob"
+      },
+      "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-cmdpidq-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'), concat('pf-cmdpidq-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-app'))]"
+    },
+    "appSettingControlDbConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Connection string for Control DB"
+      }
+    },
+    "stagingControlDbConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Connection string for staging Control DB"
+      }
+    },
+    "appSettingCommandHumanResourceManagement": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for HRM command queue"
+      }
+    },
+    "stagingCommandHumanResourceManagement": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging HRM command queue"
+      }
+    },
+    "appSettingCommandNotificationManagement": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for NM command queue"
+      }
+    },
+    "stagingCommandNotificationManagement": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging NM command queue"
+      }
+    },
+    "appSettingCommandIdentityAccessManagement": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for IAM command queue"
+      }
+    },
+    "stagingCommandIdentityAccessManagement": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging IAM command queue"
+      }
+    },
+    "appSettingCommandTimeAndAttendance": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for TA command queue"
+      }
+    },
+    "stagingCommandTimeAndAttendance": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging TA command queue"
+      }
+    },
+    "appSettingCommandDataCompliancePrivacy": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for DCP command queue"
+      }
+    },
+    "stagingCommandDataCompliancePrivacy": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging DCP command queue"
+      }
+    },
+    "appSettingCommandRealTimePayrollIntegration": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for RTPI command queue"
+      }
+    },
+    "stagingCommandRealTimePayrollIntegration": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging RTPI command queue"
+      }
+    },
+    "appSettingCommandPayrollIntegration": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for PI command queue"
+      }
+    },
+    "stagingCommandPayrollIntegration": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure servicebus connection string for staging PI command queue"
+      }
+    },
+    "appSettingDeploymentLogIdentity": {
+      "type": "string",
+      "metadata": {
+        "description": "Logical application identifier used when logging"
+      },
+      "defaultValue": "[parameters('environmentCode')]"
+    }
+  },
+  "variables": {
+    "messageQueueStorageId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountDequeuerLogsName'))]"
+  },
+  "resources": [
+    {
+      "name": "[parameters('storageAccountDequeuerLogsName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2018-07-01",
+      "location": "[parameters('dequeuersLocation')]",
+      "kind": "StorageV2",
+      "tags": {
+        "displayName": "Webjobs Storage Account",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "properties": {
+        "accessTier": "Hot",
+        "encryption":{
+          "keySource": "Microsoft.Storage",
+          "services": {
+            "blob": {
+              "enabled": true
+            }
+          }
+        },
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": true
+      },
+      "resources": [
+        {
+          "name": "[concat('default/', 'azure-webjobs-dashboard')]",
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "dependsOn": [
+              "[parameters('storageAccountDequeuerLogsName')]"
+          ]
+        },
+        {
+          "name": "[concat('default/', 'azure-webjobs-hosts')]",
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "dependsOn": [
+              "[parameters('storageAccountDequeuerLogsName')]"
+          ]
+        },
+        {
+          "name": "[concat('default/', 'azure-jobs-host-archive')]",
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "dependsOn": [
+              "[parameters('storageAccountDequeuerLogsName')]"
+          ]
+        },
+        {
+          "name": "[concat('default/', 'azure-jobs-host-output')]",
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "dependsOn": [
+              "[parameters('storageAccountDequeuerLogsName')]"
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBCSyncIam.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBCSyncIamName')]",
+      "apiVersion": "2015-08-01",
+      "location": "[parameters('dequeuersLocation')]",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-iam",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "scale": null,
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBCSyncIamName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation",
+            "SubscriptionName": "iam",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "iam/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "false",
+            "Deployment": "[parameters('appSettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBCSyncIamName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBCSyncIamName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBCSyncIamName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation",
+                "SubscriptionName": "iam",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "iam/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "false",
+                "Deployment": "[parameters('appSettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerCmdHrmName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerCmdHrmName')]",
+      "apiVersion": "2015-08-01",
+      "location": "[parameters('dequeuersLocation')]",
+      "tags": {
+        "displayName": "pf-dequeuer-command-hrm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "scale": null,
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdHrmName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "",
+            "SubscriptionName": "",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "hrm/messages/inbox/commands",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "command-hrm",
+            "IsQueue": "true",
+            "Deployment": "[parameters('appSettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerCmdHrmName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdHrmName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerCmdHrmName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "",
+                "SubscriptionName": "",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "hrm/messages/inbox/commands",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "command-hrm",
+                "IsQueue": "true",
+                "Deployment": "[parameters('appSettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerCmdNmName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerCmdNmName')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-command-nm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdNmName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "",
+            "SubscriptionName": "",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "notifications/messages/inbox/commands",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "command-nm",
+            "IsQueue": "true",
+            "Deployment": "[parameters('appSettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerCmdNmName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdNmName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerCmdNmName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "",
+                "SubscriptionName": "",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "notifications/messages/inbox/commands",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "command-nm",
+                "IsQueue": "true",
+                "Deployment": "[parameters('appSettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerCmdIamName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerCmdIamName')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-command-iam",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdIamName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "",
+            "SubscriptionName": "",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "iam/messages/inbox/commands",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "command-iam",
+            "IsQueue": "true",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerCmdIamName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdIamName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerCmdIamName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "",
+                "SubscriptionName": "",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "iam/messages/inbox/commands",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "command-iam",
+                "IsQueue": "true",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerCmdIamDimName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerCmdIamDimName')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-command-iamdim",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdIamDimName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "",
+            "SubscriptionName": "",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "iamdim/messages/inbox/commands",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "command-iamdim",
+            "IsQueue": "true",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerCmdIamDimName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdIamDimName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerCmdIamDimName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "",
+                "SubscriptionName": "",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "iamdim/messages/inbox/commands",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "command-iamdim",
+                "IsQueue": "true",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerCmdHrmDimName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerCmdHrmDimName')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-command-hrmdim",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdHrmDimName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "",
+            "SubscriptionName": "",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "hrm/messages/inbox/commands",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "command-hrmdim",
+            "IsQueue": "true",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerCmdHrmDimName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdHrmDimName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerCmdHrmDimName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "",
+                "SubscriptionName": "",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "hrm/messages/inbox/commands",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "command-hrmdim",
+                "IsQueue": "true",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcSyncHighPriorityHrm.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcSyncHighPriorityHrm')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-high-priority-hrm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "requestTracingEnabled": false,
+          "managedPipelineMode": 0,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHighPriorityHrm'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation-high-priority",
+            "SubscriptionName": "hrm",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "hrm/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "false",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcSyncHighPriorityHrm'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHighPriorityHrm'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcSyncHighPriorityHrm'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation-high-priority",
+                "SubscriptionName": "hrm",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "hrm/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "false",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcSyncHighPriorityNm.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcSyncHighPriorityNm')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-high-priority-nm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHighPriorityNm'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation-high-priority",
+            "SubscriptionName": "nm",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "notifications/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "False",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcSyncHighPriorityNm'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHighPriorityNm'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "requestTracingEnabled": false,
+              "managedPipelineMode": 0,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcSyncHighPriorityNm'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation-high-priority",
+                "SubscriptionName": "nm",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "notifications/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "False",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcSyncHrm.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcSyncHrm')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-hrm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHrm'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation",
+            "SubscriptionName": "hrm",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "hrm/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "False",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcSyncHrm'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHrm'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcSyncHrm'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation",
+                "SubscriptionName": "hrm",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "hrm/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "False",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcAdminHrm.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcAdminHrm')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-admin-hrm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcAdminHrm'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-admin",
+            "SubscriptionName": "hrm",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "hrm/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "False",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcAdminHrm'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcAdminHrm'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcAdminHrm'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-admin",
+                "SubscriptionName": "hrm",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "hrm/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "False",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcSyncNm.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcSyncNm')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-nm",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncNm'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation",
+            "SubscriptionName": "nm",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "notifications/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "False",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcSyncNm'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncNm'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcSyncNm'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation",
+                "SubscriptionName": "nm",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "notifications/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "False",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for GlobalMessageSweeperName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappGlobalMessageSweeperName')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-global-message-sweeper",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappGlobalMessageSweeperName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "WEBJOBS_STOPPED": "0",
+            "ControlDbConnectionString": "[parameters('appSettingControlDbConnectionString')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "ServiceBusConnectionString_CommandHumanResourceManagement": "[parameters('appSettingCommandHumanResourceManagement')]",
+            "ServiceBusConnectionString_CommandNotificationManagement": "[parameters('appSettingCommandNotificationManagement')]",
+            "ServiceBusConnectionString_CommandIdentityAccessManagement": "[parameters('appSettingCommandIdentityAccessManagement')]",
+            "ServiceBusConnectionString_CommandPayrollIntegration": "[parameters('appSettingCommandPayrollIntegration')]",
+            "ServiceBusConnectionString_CommandTimeAndAttendance": "[parameters('appSettingCommandTimeAndAttendance')]",
+            "ServiceBusConnectionString_CommandDataCompliancePrivacy": "[parameters('appSettingCommandDataCompliancePrivacy')]",
+            "ServiceBusConnectionString_CommandRealTimePayrollIntegration": "[parameters('appSettingCommandRealTimePayrollIntegration')]",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappGlobalMessageSweeperName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [
+              "WEBJOBS_STOPPED",
+              "ControlDbConnectionString",
+              "ServiceBusConnectionString_CommandHumanResourceManagement",
+              "ServiceBusConnectionString_CommandNotificationManagement",
+              "ServiceBusConnectionString_CommandIdentityAccessManagement",
+              "ServiceBusConnectionString_CommandPayrollIntegration",
+              "ServiceBusConnectionString_CommandTimeAndAttendance",
+              "ServiceBusConnectionString_CommandDataCompliancePrivacy",
+              "ServiceBusConnectionString_CommandRealTimePayrollIntegration"
+            ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappGlobalMessageSweeperName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappGlobalMessageSweeperName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBJOBS_STOPPED": "1",
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "ControlDbConnectionString": "[parameters('stagingControlDbConnectionString')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "ServiceBusConnectionString_CommandHumanResourceManagement": "[parameters('stagingCommandHumanResourceManagement')]",
+                "ServiceBusConnectionString_CommandNotificationManagement": "[parameters('stagingCommandNotificationManagement')]",
+                "ServiceBusConnectionString_CommandIdentityAccessManagement": "[parameters('stagingCommandIdentityAccessManagement')]",
+                "ServiceBusConnectionString_CommandPayrollIntegration": "[parameters('stagingCommandPayrollIntegration')]",
+                "ServiceBusConnectionString_CommandTimeAndAttendance": "[parameters('stagingCommandTimeAndAttendance')]",
+                "ServiceBusConnectionString_CommandDataCompliancePrivacy": "[parameters('stagingCommandDataCompliancePrivacy')]",
+                "ServiceBusConnectionString_CommandRealTimePayrollIntegration": "[parameters('stagingCommandRealTimePayrollIntegration')]",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcSyncHighPriorityPi.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcSyncHighPriorityPi')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-high-priority-pi",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHighPriorityPi'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation-high-priority",
+            "SubscriptionName": "pi",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "pi/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "false",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcSyncHighPriorityPi'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncHighPriorityPi'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcSyncHighPriorityPi'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation-high-priority",
+                "SubscriptionName": "pi",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "pi/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "false",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerBcSyncPi.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerBcSyncPi')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-bc-sync-pi",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncPi'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "bc-synchronisation",
+            "SubscriptionName": "pi",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "pi/messages/inbox/events",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "",
+            "IsQueue": "false",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerBcSyncPi'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerBcSyncPi'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerBcSyncPi'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "bc-synchronisation",
+                "SubscriptionName": "pi",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "pi/messages/inbox/events",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "",
+                "IsQueue": "false",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "comments": "Infrastructure set up for DequeuerCmdPiName.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[parameters('webappDequeuerCmdPiName')]",
+      "location": "[parameters('dequeuersLocation')]",
+      "apiVersion": "2015-08-01",
+      "tags": {
+        "displayName": "pf-dequeuer-command-pi",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "AzureWebJobsDashboard",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+              "type": "Custom"
+            }
+          ],
+          "scmSiteAlsoStopped": false,
+          "hostingEnvironmentProfile": null,
+          "clientAffinityEnabled": false,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "cloningInfo": null,
+          "minTlsVersion": "1.2",
+          "httpsOnly": true
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountDequeuerLogsName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdPiName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "TopicName": "",
+            "SubscriptionName": "",
+            "InboxBaseAddress": "[parameters('appSettingMessageQInboxBaseAddress')]",
+            "InboxPath": "pi/messages/inbox/commands",
+            "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+            "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+            "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+            "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+            "ServiceBusConnectionString": "[parameters('appSettingMessageQServiceBusEndpoint')]",
+            "QueueName": "command-pi",
+            "IsQueue": "True",
+            "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+            "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('webappDequeuerCmdPiName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [ "InboxBaseAddress", "ServiceBusConnectionString" ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('webappDequeuerCmdPiName'))]"
+          ],
+          "type": "slots",
+          "location": "[parameters('dequeuersLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "state": "Stopped",
+            "enabled": true,
+            "serverFarmId": "[resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "AzureWebJobsDashboard",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountDequeuerLogsName'),';AccountKey=',listKeys(variables('messageQueueStorageId'),'2015-05-01-preview').key1)]",
+                  "type": "Custom"
+                }
+              ],
+              "scmSiteAlsoStopped": false,
+              "hostingEnvironmentProfile": null,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0,
+              "cloningInfo": null,
+              "minTlsVersion": "1.2",
+              "httpsOnly": true
+            }
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', parameters('webappDequeuerCmdPiName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "TopicName": "",
+                "SubscriptionName": "",
+                "InboxBaseAddress": "[parameters('stagingMessageInboxBaseAddress')]",
+                "InboxPath": "pi/messages/inbox/commands",
+                "ResourceId": "[parameters('appSettingMessageQServiceBusResourceId')]",
+                "ClientId": "[parameters('appSettingMessageQServiceBusClientId')]",
+                "ClientSecret": "[parameters('appSettingMessageQServiceBusClientSecret')]",
+                "TokenEndpoint": "[parameters('appSettingMessageQTokenEndpoint')]",
+                "ServiceBusConnectionString": "[parameters('stagingServiceBusConnenctionString')]",
+                "QueueName": "command-pi",
+                "IsQueue": "True",
+                "Deployment": "[parameters('appsettingDeploymentLogIdentity')]",
+                "CoreAThumbprint": "[parameters('appsettingCoreAThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "dequeuersAppInsightsName": {
+      "type": "string",
+      "value": "[parameters('appInsightsName')]"
+    },
+    "storageAccountDequeuerLogsName": {
+      "type": "string",
+      "value": "[parameters('storageAccountDequeuerLogsName')]"
+    }
+  }
+}

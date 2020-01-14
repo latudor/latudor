@@ -1,0 +1,855 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environmentCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Logical environment code"
+            }
+        },
+        "locationCode": {
+            "type": "string",
+            "metadata": {
+                "description": "Logical location code"
+            }
+        },
+        "dotNetApplicationLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The azure region (location) of the dotnet application"
+            },
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "deploymentId": {
+            "type": "string",
+            "metadata": {
+                "description": "Unique identifier for this deployment"
+            },
+            "defaultValue": ""
+        },
+        "appServicePlanName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the DotNet API app service plan"
+            },
+            "defaultValue": "[if(empty(parameters('deploymentId')), concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('locationCode'), '-plan'), concat('pf-dotnet-', parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode'), '-plan'))]"
+        },
+        "skuName": {
+            "type": "string",
+            "allowedValues": [
+                "P1v2",
+                "P2v2",
+                "P3v2"
+            ],
+            "metadata": {
+                "description": "Size of service plan"
+            },
+            "defaultValue": "P1v2"
+        },
+        "connStringClientStorageAccount": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingClientStorageAccountTrentApi": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "thisisafakeconnectionstring"
+        },
+        "appSettingControlDbConnectionString": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "thisisafakeconnectionstring"
+        },
+        "stagingControlDbConnectionString": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging control DB Connectionstring"
+            }
+        },
+        "appSettingSendGridKey": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingCoreAThumbprint": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingEnvironmentKeyResolverThumbprint": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingTimeZone": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "Europe/London"
+        },
+        "appSettingTrustedSubsystemClientId": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingTrustedSubsystemBaseAuthenticationUri": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingGoogleMapsUrl": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "https://maps.googleapis.com/maps/api/staticmap"
+        },
+        "appSettingGoogleMapsClientId": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingGoogleMapsCryptoKey": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appSettingServiceBusConnectionStringBoundedContextSynchronisation": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringBoundedContextSynchronisation": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for bc-sync topic"
+            }
+        },
+        "appSettingServiceBusConnectionStringCommandNotificationManagement": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringCommandNotificationManagement": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for nm command queue"
+            }
+        },
+        "appSettingServiceBusConnectionStringCommandHrmDataImportManagement": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringCommandHrmDataImportManagement": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for hrm-dim command queue"
+            }
+        },
+        "appSettingDeploymentLogIdentity": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "[parameters('environmentCode')]"
+        },
+        "appSettingServiceBusConnectionStringBoundedContextSynchronisationHighPriority": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringBoundedContextSynchronisationHighPriority": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for bc-sync high priority topic"
+            }
+        },
+        "appSettingServiceBusConnectionStringCommandHumanResourceManagement": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringCommandHumanResourceManagement": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for hrm command queue"
+            }
+        },
+        "appSettingServiceBusConnectionStringCommandIdentityAccessManagement": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringCommandIdentityAccessManagement": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for iam command queue"
+            }
+        },
+        "appSettingServiceBusConnStringCommandCalendar": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnStringCommandCalendar": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for calendar command queue"
+            }
+        },
+        "appSettingServiceBusConnStringCommandSocialFeed": {
+          "type": "string",
+          "metadata": {
+              "description": "Connection string string for social feed command queue"
+          }
+        },
+        "stagingServiceBusConnStringCommandSocialFeed": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for social feed command queue"
+            }
+        },
+        "appSettingServiceBusConnStringCommandAdmin": {
+          "type": "string",
+          "metadata": {
+              "description": "Connection string string for admin command queue"
+          }
+        },
+        "stagingServiceBusConnStringCommandAdmin": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for admin command queue"
+            }
+        },
+        "appSettingServiceBusConnStringCommandIamDataImport": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnStringCommandIamDataImport": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for iam-dim command queue"
+            }
+        },
+        "appSettingServiceBusConnectionStringCommandTimeAndAttendance": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringCommandTimeAndAttendance": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for t&a command queue"
+            }
+        },
+        "appSettingServiceBusConnectionStringPayrollIntegration": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnectionStringPayrollIntegration": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for PI command queue"
+            }
+        },
+        "appSettingServiceBusConnStringCommandDataCompliancePrivacy": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "stagingServiceBusConnStringCommandDataCompliancePrivacy": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for dcp command queue"
+            }
+        },
+        "appSettingServiceBusConnStringRealTimePayrollIntegration": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": ""
+        },
+        "stagingServiceBusConnStringRealTimePayrollIntegration": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging ASB connection string for RTPI command queue"
+            },
+            "defaultValue": ""
+        },
+        "healthcheckEmailList": {
+            "type": "string",
+            "defaultValue": "operations@people-first.com",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "appInsightsNameDotNet": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the App Insights account"
+            },
+            "defaultValue": "[concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('locationCode'), '-ins')]"
+        },
+        "applicationInsightsResourceGroup": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the resource group the application insights account is created in."
+            },
+            "defaultValue": "[concat('pf-dotnet-shared-', parameters('environmentCode'), '-', parameters('locationCode'), '-rg')]"
+        },
+        "appSettingDefaultPath": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app.azurewebsites.net')]"
+        },
+        "stagingDefaultPath": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app-staging.azurewebsites.net')]"
+        },
+        "appSettingInternalApiPath": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app.azurewebsites.net/api/v1')]"
+        },
+        "stagingInternalApiPath": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app-staging.azurewebsites.net/api/v1')]"
+        },
+        "appSettingJobBoardPath": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "[concat('https://pf-jobboard-', parameters('environmentCode'), '-', parameters('locationCode'), '-app.azurewebsites.net')]"
+        },
+        "stagingJobBoardPath": {
+            "type": "string",
+            "metadata": {
+                "description": "Staging host address of Jobboard and reverse proxy"
+            },
+            "defaultValue": "[concat('https://pf-jobboard-', parameters('environmentCode'), '-', parameters('locationCode'), '-app-staging.azurewebsites.net')]"
+        },
+        "appSettingIsCachingEnabled": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "true"
+        },
+        "appSettingMessageRetentionPeriodInHours": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "216"
+        },
+        "appSettingApplicationAudience": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "https://people-first.com"
+        },
+        "appSettingHangfireSchemaNamePi": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": "hfPi"
+        },
+        "sslCoreACertName": {
+            "type": "string",
+            "defaultValue": "DONOTDEPLOY",
+            "metadata": {
+                "description": "The name of the SSL secret in the key vault.  A value of DONOTDEPLOY indicates that the certificate resource should not be deployed.  If a name is supplied then keyVaultSubscriptionId, keyVaultResourceGroupName and keyVaultName must also be supplied."
+            }
+        },
+        "sslEnvKeyResolverCertName": {
+            "type": "string",
+            "defaultValue": "DONOTDEPLOY1",
+            "metadata": {
+                "description": "The name of the SSL secret in the key vault.  A value of DONOTDEPLOY indicates that the certificate resource should not be deployed.  If a name is supplied then keyVaultSubscriptionId, keyVaultResourceGroupName and keyVaultName must also be supplied."
+            }
+        },
+        "keyVaultSubscriptionId": {
+            "type": "string",
+            "defaultValue": "894be06f-f653-4e81-ab8a-7722ba0e88b5",
+            "metadata": {
+                "description": "The subscription identifier for the key vault subscription."
+            }
+        },
+        "keyVaultResourceGroupName": {
+            "type": "string",
+            "defaultValue": "pf-common-dev-euw-rg",
+            "metadata": {
+                "description": "The resource group name for the key vault."
+            }
+        },
+        "keyVaultName": {
+            "type": "string",
+            "defaultValue": "pf-vault-dev-euw-kv",
+            "metadata": {
+                "description": "The name of the key vault."
+            }
+        },
+        "instanceCount": {
+            "type": "int",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": 1
+        },
+        "cpuUpperThreshold": {
+            "type": "int",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": 70
+        },
+        "cpuLowerThreshold": {
+            "type": "int",
+            "metadata": {
+                "description": ""
+            },
+            "defaultValue": 40
+        }
+    },
+  "variables": {
+    "_deploymentCode": "[if(empty(parameters('deploymentId')), concat(parameters('environmentCode'), '-', parameters('locationCode')), concat(parameters('deploymentId'), '-', parameters('environmentCode'), '-', parameters('locationCode')))]",
+    "_appName": "[concat('pf-dotnet-', variables('_deploymentCode'), '-app')]",
+    "customEmails": "[split(parameters('healthcheckEmailList'), ',')]",
+    "deployCertificates": "[if(equals(parameters('sslCoreACertName'), 'DONOTDEPLOY'), bool('false'), bool('true'))]"
+  },
+  "resources": [
+    {
+      "comments": "Setup App Service Plan.",
+      "type": "Microsoft.Web/serverfarms",
+      "sku": {
+        "name": "[parameters('skuName')]",
+        "tier": "Premiumv2",
+        "size": "[parameters('skuName')]",
+        "capacity": "[parameters('instanceCount')]"
+      },
+      "kind": "app",
+      "name": "[parameters('appServicePlanName')]",
+      "apiVersion": "2016-09-01",
+      "location": "[parameters('dotNetApplicationLocation')]",
+      "scale": null,
+      "properties": {
+        "name": "[parameters('appServicePlanName')]",
+        "perSiteScaling": false,
+        "reserved": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "App Service Plan",
+        "Deployment": "[parameters('environmentCode')]"
+      }
+    },
+    {
+      "comments": "Infrastructure set up for DotNet API.",
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[variables('_appName')]",
+      "apiVersion": "2016-08-01",
+      "location": "[parameters('dotNetApplicationLocation')]",
+      "tags": {
+        "displayName": "DotNetAPI",
+        "version": "1.0.0.0",
+        "Deployment": "[parameters('environmentCode')]"
+      },
+      "scale": null,
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "reserved": false,
+        "siteConfig": {
+          "netFrameworkVersion": "4.7",
+          "phpVersion": "",
+          "javaVersion": null,
+          "javaContainer": null,
+          "javaContainerVersion": null,
+          "pythonVersion": null,
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "alwaysOn": true,
+          "managedPipelineMode": 0,
+          "requestTracingEnabled": false,
+          "remoteDebuggingEnabled": false,
+          "remoteDebuggingVersion": null,
+          "connectionStrings": [
+            {
+              "name": "ClientStorageAccount",
+              "connectionString": "[parameters('connStringClientStorageAccount')]",
+              "Type": 4
+            }
+          ],
+          "minTlsVersion": "1.2"
+        },
+        "scmSiteAlsoStopped": false,
+        "hostingEnvironmentProfile": null,
+        "clientAffinityEnabled": false,
+        "clientCertEnabled": false,
+        "hostNamesDisabled": false,
+        "containerSize": 0,
+        "dailyMemoryTimeQuota": 0,
+        "cloningInfo": null,
+        "httpsOnly": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      ],
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', variables('_appName'))]"
+          ],
+          "tags": {
+            "displayName": "AppSettings"
+          },
+          "properties": {
+            "WEBSITE_NODE_DEFAULT_VERSION": "6.9.1",
+            "ClientStorageAccount": "[parameters('appSettingClientStorageAccountTrentApi')]",
+            "ControlDbConnectionString": "[parameters('appSettingControlDbConnectionString')]",
+            "SendGridKey": "[parameters('appSettingSendGridKey')]",
+            "DefaultPath": "[parameters('appSettingDefaultPath')]",
+            "InternalApiPath": "[parameters('appSettingInternalApiPath')]",
+            "JobBoardPath": "[parameters('appSettingJobBoardPath')]",
+            "WEBSITE_LOAD_CERTIFICATES": "*",
+            "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+            "EnvironmentKeyResolverThumbprint": "[parameters('appSettingEnvironmentKeyResolverThumbprint')]",
+            "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsNameDotNet')), '2014-04-01').InstrumentationKey]",
+            "TimeZone": "[parameters('appSettingTimeZone')]",
+            "TrustedSubsystemClientId": "[parameters('appSettingTrustedSubsystemClientId')]",
+            "TrustedSubsystemBaseAuthenticationUri": "[parameters('appSettingTrustedSubsystemBaseAuthenticationUri')]",
+            "GoogleMapsUrl": "[parameters('appSettingGoogleMapsUrl')]",
+            "GoogleMapsClientId": "[parameters('appSettingGoogleMapsClientId')]",
+            "GoogleMapsCryptoKey": "[parameters('appSettingGoogleMapsCryptoKey')]",
+            "ServiceBusConnectionString_BoundedContextSynchronisation": "[parameters('appSettingServiceBusConnectionStringBoundedContextSynchronisation')]",
+            "ServiceBusConnectionString_CommandNotificationManagement": "[parameters('appSettingServiceBusConnectionStringCommandNotificationManagement')]",
+            "ServiceBusConnectionString_CommandHrmDataImportManagement": "[parameters('appSettingServiceBusConnectionStringCommandHrmDataImportManagement')]",
+            "DeploymentLogIdentity": "[parameters('appSettingDeploymentLogIdentity')]",
+            "ServiceBusConnectionString_BoundedContextSynchronisationHighPriority": "[parameters('appSettingServiceBusConnectionStringBoundedContextSynchronisationHighPriority')]",
+            "ServiceBusConnectionString_CommandDataCompliancePrivacy": "[parameters('appSettingServiceBusConnStringCommandDataCompliancePrivacy')]",
+            "ServiceBusConnectionString_RealTimePayrollIntegration": "[parameters('appSettingServiceBusConnStringRealTimePayrollIntegration')]",
+            "ServiceBusConnectionString_CommandHumanResourceManagement": "[parameters('appSettingServiceBusConnectionStringCommandHumanResourceManagement')]",
+            "ServiceBusConnectionString_CommandIdentityAccessManagement": "[parameters('appSettingServiceBusConnectionStringCommandIdentityAccessManagement')]",
+            "ServiceBusConnectionString_CommandTimeAndAttendance": "[parameters('appSettingServiceBusConnectionStringCommandTimeAndAttendance')]",
+            "ServiceBusConnectionString_CommandPayrollIntegration": "[parameters('appSettingServiceBusConnectionStringPayrollIntegration')]",
+            "ServiceBusConnectionString_CommandCalendar": "[parameters('appSettingServiceBusConnStringCommandCalendar')]",
+            "ServiceBusConnectionString_CommandSocialFeed": "[parameters('appSettingServiceBusConnStringCommandSocialFeed')]",
+            "ServiceBusConnectionString_CommandAdmin": "[parameters('appSettingServiceBusConnStringCommandAdmin')]",
+            "ServiceBusConnectionString_CommandIamDataImportManagement": "[parameters('appSettingServiceBusConnStringCommandIamDataImport')]",
+            "IsCachingEnabled": "[parameters('appSettingIsCachingEnabled')]",
+            "MessageRetentionPeriodInHours": "[parameters('appSettingMessageRetentionPeriodInHours')]",
+            "HangfireSchemaName_Pi": "[parameters('appSettingHangfireSchemaNamePi')]",
+            "ApplicationAudience": "[parameters('appSettingApplicationAudience')]"
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "name": "Slotconfignames",
+          "type": "config",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', variables('_appName'))]"
+          ],
+          "properties": {
+            "appSettingNames": [
+              "ControlDbConnectionString",
+              "DefaultPath",
+              "InternalApiPath",
+              "JobBoardPath",
+              "ServiceBusConnectionString_BoundedContextSynchronisation",
+              "ServiceBusConnectionString_CommandNotificationManagement",
+              "ServiceBusConnectionString_CommandHrmDataImportManagement",
+              "ServiceBusConnectionString_BoundedContextSynchronisationHighPriority",
+              "ServiceBusConnectionString_CommandDataCompliancePrivacy",
+              "ServiceBusConnectionString_RealTimePayrollIntegration",
+              "ServiceBusConnectionString_CommandHumanResourceManagement",
+              "ServiceBusConnectionString_CommandIdentityAccessManagement",
+              "ServiceBusConnectionString_CommandTimeAndAttendance",
+              "ServiceBusConnectionString_CommandPayrollIntegration",
+              "ServiceBusConnectionString_CommandCalendar",
+              "ServiceBusConnectionString_CommandSocialFeed",
+              "ServiceBusConnectionString_CommandAdmin",              
+              "ServiceBusConnectionString_CommandIamDataImportManagement"
+            ]
+          }
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "condition": "[startsWith(parameters('skuName'), 'P')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', variables('_appName'))]"
+          ],
+          "location": "[parameters('dotNetApplicationLocation')]",
+          "tags": {
+            "Deployment": "[parameters('environmentCode')]"
+          },
+          "name": "Staging",
+          "properties": {
+            "enabled": true,
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+            "reserved": false,
+            "siteConfig": {
+              "netFrameworkVersion": "4.7",
+              "phpVersion": "",
+              "javaVersion": null,
+              "javaContainer": null,
+              "javaContainerVersion": null,
+              "pythonVersion": null,
+              "use32BitWorkerProcess": false,
+              "webSocketsEnabled": false,
+              "alwaysOn": true,
+              "managedPipelineMode": 0,
+              "requestTracingEnabled": false,
+              "remoteDebuggingEnabled": false,
+              "remoteDebuggingVersion": null,
+              "connectionStrings": [
+                {
+                  "name": "ClientStorageAccount",
+                  "connectionString": "[parameters('connStringClientStorageAccount')]",
+                  "Type": 4
+                }
+              ]
+            },
+            "scmSiteAlsoStopped": false,
+            "hostingEnvironmentProfile": null,
+            "clientAffinityEnabled": false,
+            "clientCertEnabled": false,
+            "hostNamesDisabled": false,
+            "containerSize": 0,
+            "dailyMemoryTimeQuota": 0,
+            "cloningInfo": null,
+            "httpsOnly": true
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "AppSettings",
+              "type": "config",
+              "condition": "[startsWith(parameters('skuName'), 'P')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', variables('_appName'), 'Staging')]"
+              ],
+              "properties": {
+                "WEBSITE_NODE_DEFAULT_VERSION": "6.9.1",
+                "ClientStorageAccount": "[parameters('appSettingClientStorageAccountTrentApi')]",
+                "ControlDbConnectionString": "[parameters('stagingControlDbConnectionString')]",
+                "SendGridKey": "[parameters('appSettingSendGridKey')]",
+                "DefaultPath": "[parameters('stagingDefaultPath')]",
+                "InternalApiPath": "[parameters('stagingInternalApiPath')]",
+                "JobBoardPath": "[parameters('stagingJobBoardPath')]",
+                "WEBSITE_LOAD_CERTIFICATES": "*",
+                "CoreAThumbprint": "[parameters('appSettingCoreAThumbprint')]",
+                "EnvironmentKeyResolverThumbprint": "[parameters('appSettingEnvironmentKeyResolverThumbprint')]",
+                "AiInstrumentationKey": "[reference(resourceId(parameters('applicationInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appInsightsNameDotNet')), '2014-04-01').InstrumentationKey]",
+                "TimeZone": "[parameters('appSettingTimeZone')]",
+                "TrustedSubsystemClientId": "[parameters('appSettingTrustedSubsystemClientId')]",
+                "TrustedSubsystemBaseAuthenticationUri": "[parameters('appSettingTrustedSubsystemBaseAuthenticationUri')]",
+                "GoogleMapsUrl": "[parameters('appSettingGoogleMapsUrl')]",
+                "GoogleMapsClientId": "[parameters('appSettingGoogleMapsClientId')]",
+                "GoogleMapsCryptoKey": "[parameters('appSettingGoogleMapsCryptoKey')]",
+                "ServiceBusConnectionString_BoundedContextSynchronisation": "[parameters('stagingServiceBusConnectionStringBoundedContextSynchronisation')]",
+                "ServiceBusConnectionString_CommandNotificationManagement": "[parameters('stagingServiceBusConnectionStringCommandNotificationManagement')]",
+                "ServiceBusConnectionString_CommandHrmDataImportManagement": "[parameters('stagingServiceBusConnectionStringCommandHrmDataImportManagement')]",
+                "DeploymentLogIdentity": "[parameters('appSettingDeploymentLogIdentity')]",
+                "ServiceBusConnectionString_BoundedContextSynchronisationHighPriority": "[parameters('stagingServiceBusConnectionStringBoundedContextSynchronisationHighPriority')]",
+                "ServiceBusConnectionString_CommandDataCompliancePrivacy": "[parameters('stagingServiceBusConnStringCommandDataCompliancePrivacy')]",
+                "ServiceBusConnectionString_RealTimePayrollIntegration": "[parameters('stagingServiceBusConnStringRealTimePayrollIntegration')]",
+                "ServiceBusConnectionString_CommandHumanResourceManagement": "[parameters('stagingServiceBusConnectionStringCommandHumanResourceManagement')]",
+                "ServiceBusConnectionString_CommandIdentityAccessManagement": "[parameters('stagingServiceBusConnectionStringCommandIdentityAccessManagement')]",
+                "ServiceBusConnectionString_CommandTimeAndAttendance": "[parameters('stagingServiceBusConnectionStringCommandTimeAndAttendance')]",
+                "ServiceBusConnectionString_CommandPayrollIntegration": "[parameters('stagingServiceBusConnectionStringPayrollIntegration')]",
+                "ServiceBusConnectionString_CommandCalendar": "[parameters('stagingServiceBusConnStringCommandCalendar')]",
+                "ServiceBusConnectionString_CommandSocialFeed": "[parameters('stagingServiceBusConnStringCommandSocialFeed')]",
+                "ServiceBusConnectionString_CommandAdmin": "[parameters('stagingServiceBusConnStringCommandAdmin')]",
+                "ServiceBusConnectionString_CommandIamDataImportManagement": "[parameters('stagingServiceBusConnStringCommandIamDataImport')]",
+                "IsCachingEnabled": "[parameters('appSettingIsCachingEnabled')]",
+                "MessageRetentionPeriodInHours": "[parameters('appSettingMessageRetentionPeriodInHours')]",
+                "HangfireSchemaName_Pi": "[parameters('appSettingHangfireSchemaNamePi')]",
+                "ApplicationAudience": "[parameters('appSettingApplicationAudience')]"
+              }
+            }
+          ],
+          "type": "slots"
+        }
+      ]
+    },
+    {
+      "type": "microsoft.insights/autoscalesettings",
+      "condition": "[startsWith(parameters('skuName'), 'P')]",
+      "name": "DotNet CPU Percentage Scale Plan",
+      "apiVersion": "2014-04-01",
+      "location": "[parameters('dotNetApplicationLocation')]",
+      "tags": {},
+      "scale": null,
+      "properties": {
+        "enabled": "True",
+        "targetResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "profiles": [
+          {
+            "name": "DotNet CPU Percentage Scale Plan",
+            "capacity": {
+              "minimum": "[parameters('instanceCount')]",
+              "maximum": "5",
+              "default": "[parameters('instanceCount')]"
+            },
+            "rules": [
+              {
+                "metricTrigger": {
+                  "metricName": "CPUPercentage",
+                  "metricNamespace": "",
+                  "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT10M",
+                  "timeAggregation": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": "[parameters('cpuUpperThreshold')]"
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT20M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "CPUPercentage",
+                  "metricNamespace": "",
+                  "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT10M",
+                  "timeAggregation": "Average",
+                  "operator": "LessThan",
+                  "threshold": "[parameters('cpuLowerThreshold')]"
+                },
+                "scaleAction": {
+                  "direction": "Decrease",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT20M"
+                }
+              }
+            ],
+            "recurrence": {
+              "frequency": "Week",
+              "schedule": {
+                "timeZone": "UTC",
+                "days": [
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday",
+                  "Sunday"
+                ],
+                "hours": [
+                  0
+                ],
+                "minutes": [
+                  0
+                ]
+              }
+            }
+          }
+        ],
+        "notifications": [
+          {
+            "operation": "Scale",
+            "email": {
+              "sendToSubscriptionAdministrator": "True",
+              "sendToSubscriptionCoAdministrators": "True",
+              "customEmails": "[variables('customEmails')]"
+            },
+            "webhooks": []
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      ]
+    },
+    {
+      "name": "[parameters('sslCoreACertName')]",
+      "condition": "[equals(variables('deployCertificates'), bool('true'))]",
+      "type": "Microsoft.Web/certificates",
+      "apiVersion": "2016-03-01",
+      "location": "[parameters('dotNetApplicationLocation')]",
+      "properties": {
+        "keyVaultId": "[resourceId(parameters('keyVaultSubscriptionId'), parameters('keyVaultResourceGroupName'), 'Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+        "keyVaultSecretName": "[parameters('sslCoreACertName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      ]
+    },
+    {
+      "name": "[parameters('sslEnvKeyResolverCertName')]",
+      "condition": "[equals(variables('deployCertificates'), bool('true'))]",
+      "type": "Microsoft.Web/certificates",
+      "apiVersion": "2016-03-01",
+      "location": "[parameters('dotNetApplicationLocation')]",
+      "properties": {
+        "keyVaultId": "[resourceId(parameters('keyVaultSubscriptionId'), parameters('keyVaultResourceGroupName'), 'Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+        "keyVaultSecretName": "[parameters('sslEnvKeyResolverCertName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+  }
+}

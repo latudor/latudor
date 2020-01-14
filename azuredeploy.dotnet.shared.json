@@ -1,0 +1,319 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentCode": {
+      "type": "string",
+      "metadata": {
+        "description": "Logical environment code"
+      }
+    },
+    "locationCode": {
+      "type": "string",
+      "metadata": {
+        "description": "Logical location code"
+      }
+    },
+    "appInsightsLocationCode": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights Logical location code"
+      },
+      "defaultValue": "[parameters('locationCode')]"
+    },
+    "appNameDotNet": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the DotNetAPI web app"
+      },
+      "defaultValue": "[concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('locationCode'), '-app')]"
+    },
+    "healthcheckEnabled": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      },
+      "defaultValue": "true"
+    },
+    "healthcheckUrl": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      },
+      "defaultValue": "[concat('https://pf-webui-', parameters('environmentCode'), '-', parameters('locationCode'), '-app.azurewebsites.net/api/v1/_core/healthcheck')]"
+    },
+    "appInsightsNameDotNet": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      },
+      "defaultValue": "[concat('pf-dotnet-', parameters('environmentCode'), '-', parameters('appInsightsLocationCode'), '-ins')]"
+    },
+    "appInsightsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      },
+      "defaultValue": "West Europe"
+    },
+    "webhookUrl": {
+      "type": "string",
+      "defaultValue": "https://pf-oncall-prod-euw-func.azurewebsites.net/api/OnCall_ProcessAlert?code=",
+      "metadata": {
+        "description": "URL of a webhook that will receive an HTTP POST when the alert activates."
+      }
+    },
+    "oncallFuncKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Key to the oncall function."
+      }
+    },
+    "appInsightsSamplingRatePercentage": {
+      "type": "int",
+      "defaultValue": 100,
+      "maxValue": 100,
+      "minValue": 10,
+      "metadata": {
+        "description": "Percentage of application telemetry to sample for application insights."
+      }
+    },
+    "actionGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the action group for these alerts to go to"
+      },
+      "defaultValue": "Operations"
+    },
+    "actionGroupEmailReceivers": {
+      "type": "array",
+      "metadata": {
+        "description": "Operations email for ActionGroup"
+      },
+      "defaultValue": [
+        {
+          "name": "Ops",
+          "emailAddress": "operations@people-first.com"
+        }
+      ]
+    },
+    "actionGroupShortName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the action group for these alerts to go to"
+      },
+      "maxLength": 12,
+      "defaultValue": "Ops"
+    }
+  },
+  "variables": {
+    "alertRuleName": "[concat('healthcheck-', toLower(parameters('appNameDotNet')), '-alert')]",
+    "healthcheck": "[concat('healthcheck-', toLower(parameters('appNameDotNet')))]",
+    "oncallURL": "[concat(parameters('webhookUrl'), parameters('oncallFuncKey'), '&webappName=', parameters('appNameDotNet'), '&healthcheckUrl=', parameters('healthcheckUrl'))]",
+    "insightsResourceId": "[resourceId('microsoft.insights/components', parameters('appInsightsNameDotNet'))]"
+  },
+  "resources": [
+    {
+      "name": "[parameters('appInsightsNameDotNet')]",
+      "type": "Microsoft.Insights/components",
+      "location": "[parameters('appInsightsLocation')]",
+      "kind": "web",
+      "apiVersion": "2014-04-01",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "AppInsights"
+      },
+      "properties": {
+        "applicationId": "[parameters('appNameDotNet')]",
+        "Application_Type": "web",
+        "SamplingPercentage": "[parameters('appInsightsSamplingRatePercentage')]"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2018-03-01",
+      "name": "[parameters('actionGroupName')]",
+      "location": "Global",
+      "tags": {
+        "Owner": "Operations"
+      },
+      "dependsOn": [
+        "[variables('insightsResourceId')]"
+      ],
+      "properties": {
+        "groupShortName": "[parameters('actionGroupShortName')]",
+        "enabled": true,
+        "smsReceivers": [],
+        "emailReceivers": "[parameters('actionGroupEmailReceivers')]",
+        "webhookReceivers": [
+          {
+            "name": "oncall",
+            "serviceUri": "[variables('oncallURL')]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/webtests",
+      "name": "[variables('healthcheck')]",
+      "apiVersion": "2015-05-01",
+      "location": "[parameters('appInsightsLocation')]",
+      "kind": null,
+      "tags": {
+        "[concat('hidden-link:', variables('insightsResourceId'))]": "Resource",
+        "displayName": "Healthcheck"
+      },
+      "dependsOn": [
+        "[variables('insightsResourceId')]"
+      ],
+      "properties": {
+        "SyntheticMonitorId": "[variables('healthcheck')]",
+        "Name": "healthcheck",
+        "Description": "",
+        "Enabled": "[parameters('healthcheckEnabled')]",
+        "Frequency": 300,
+        "Timeout": 120,
+        "Kind": "ping",
+        "RetryEnabled": true,
+        "Locations": [
+          {
+            "Id": "us-il-ch1-azr"
+          },
+          {
+            "Id": "us-ca-sjc-azr"
+          },
+          {
+            "Id": "us-tx-sn1-azr"
+          },
+          {
+            "Id": "us-va-ash-azr"
+          },
+          {
+            "Id": "us-fl-mia-edge"
+          },
+          {
+            "Id": "apac-sg-sin-azr"
+          },
+          {
+            "Id": "emea-se-sto-edge"
+          },
+          {
+            "Id": "emea-ru-msa-edge"
+          },
+          {
+            "Id": "emea-nl-ams-azr"
+          },
+          {
+            "Id": "apac-jp-kaw-edge"
+          },
+          {
+            "Id": "emea-gb-db3-azr"
+          },
+          {
+            "Id": "apac-hk-hkn-azr"
+          },
+          {
+            "Id": "emea-fr-pra-edge"
+          },
+          {
+            "Id": "emea-ch-zrh-edge"
+          },
+          {
+            "Id": "latam-br-gru-edge"
+          },
+          {
+            "Id": "emea-au-syd-edge"
+          }
+        ],
+        "Configuration": {
+          "WebTest": "[concat('<WebTest         Name=\"', 'HealthCheck', '\"        Enabled=\"', parameters('healthcheckEnabled'), '\"         CssProjectStructure=\"\"         CssIteration=\"\"         Timeout=\"120\"         WorkItemIds=\"\"         xmlns=\"http://microsoft.com/schemas/VisualStudio/TeamTest/2010\"         Description=\"\"         CredentialUserName=\"\"         CredentialPassword=\"\"         PreAuthenticate=\"True\"         Proxy=\"default\"         StopOnError=\"False\"         RecordedResultFile=\"\"         ResultsLocale=\"\">        <Items>        <Request         Method=\"GET\"        Version=\"1.1\"         Url=\"', parameters('healthcheckUrl'), '\"         ThinkTime=\"0\"         Timeout=\"120\"         ParseDependentRequests=\"True\"         FollowRedirects=\"True\"         RecordResult=\"True\"         Cache=\"False\"         ResponseTimeGoal=\"0\"         Encoding=\"utf-8\"         ExpectedHttpStatusCode=\"200\"         ExpectedResponseUrl=\"\"         ReportingName=\"\"         IgnoreHttpStatusCode=\"False\" />        </Items>        </WebTest>')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "name": "Critical trace messages",
+      "apiVersion": "2018-04-16",
+      "location": "[parameters('appInsightsLocation')]",
+      "tags": {
+        "Owner": "Operations",
+        "[concat('hidden-link:', variables('insightsResourceId'))]": "Resource"
+      },
+      "scale": null,
+      "properties": {
+        "description": "Critical/Fatal trace messages detected. This could cause application to not function properly and needs to be investigated.",
+        "enabled": "true",
+        "source": {
+          "query": "traces | where severityLevel == 4",
+          "authorizedResources": [],
+          "dataSourceId": "[variables('insightsResourceId')]",
+          "queryType": "ResultCount"
+        },
+        "schedule": {
+          "frequencyInMinutes": 5,
+          "timeWindowInMinutes": 5
+        },
+        "action": {
+          "odata.type": "Microsoft.WindowsAzure.Management.Monitoring.Alerts.Models.Microsoft.AppInsights.Nexus.DataContracts.Resources.ScheduledQueryRules.AlertingAction",
+          "severity": "0",
+          "aznsAction": {
+            "actionGroup": [
+              "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+            ],
+            "emailSubject": "Fatal/Critical Trace detected"
+          },
+          "trigger": {
+            "thresholdOperator": "GreaterThan",
+            "threshold": 5
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('insightsResourceId')]",
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ]
+    },
+    {
+      "name": "[variables('alertRuleName')]",
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/webtests', variables('healthcheck'))]"
+      ],
+      "tags": {
+        "[concat('hidden-link:', resourceId('Microsoft.Insights/components', parameters('appNameDotNet')))]": "Resource",
+        "[concat('hidden-link:', resourceId('Microsoft.Insights/webtests', variables('healthcheck')))]": "Resource"
+      },
+      "properties": {
+        "description": "Alert for web test",
+        "severity": "0",
+        "enabled": "true",
+        "scopes": [
+          "[resourceId('Microsoft.Insights/webtests',variables('healthcheck'))]",
+          "[resourceId('Microsoft.Insights/components',parameters('appInsightsNameDotNet'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria",
+          "webTestId": "[resourceId('Microsoft.Insights/webtests', variables('healthcheck'))]",
+          "componentId": "[resourceId('Microsoft.Insights/components', parameters('appInsightsNameDotNet'))]",
+          "failedLocationCount": 5
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    }
+  
+  ],
+  "outputs": {
+    "HealthCheckResource": {
+      "value": "[concat('hidden-link:', resourceId('Microsoft.Insights/webtests', variables('healthcheck')))]",
+      "type": "string"
+    }
+  }
+}
